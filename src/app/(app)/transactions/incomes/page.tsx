@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ArrowDownCircle, Plus, Search, ChevronLeft, ChevronRight, FileX } from 'lucide-react';
 import Link from 'next/link';
-import { formatAmount } from '@/lib/utils'; // asumiendo que existe, si no, lo inyectamos aquí local.
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
