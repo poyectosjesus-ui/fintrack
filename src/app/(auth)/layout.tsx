@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,7 +8,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <div className="mb-8 items-center flex gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-xl shadow-lg ring-1 ring-indigo-500/50">💰</div>
+            <div className="flex h-10 w-10 overflow-hidden items-center justify-center rounded-lg shadow-lg ring-1 ring-white/10">
+              <Image src="/icono.png" alt="FinTrack Logo" width={40} height={40} className="object-cover" />
+            </div>
             <div>
               <div className="text-xl font-bold tracking-tight text-white">FinanceTracker</div>
               <div className="text-xs text-zinc-400">Control de Finanzas Personales</div>
