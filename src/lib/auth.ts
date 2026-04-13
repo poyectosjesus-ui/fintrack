@@ -1,9 +1,9 @@
-// src/lib/auth.ts
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
 import { prisma } from './prisma';
 import { verifyPassword } from './password';
+import { authConfig } from './auth.config';
 
 const LoginSchema = z.object({
   email:    z.string().email('Email inválido'),
@@ -11,6 +11,7 @@ const LoginSchema = z.object({
 });
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: 'credentials',
@@ -51,33 +52,4 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       },
     }),
   ],
-
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id          = (user.id ?? '') as string;
-        token.workspaceId = ((user as any).workspaceId ?? null) as string | null;
-        token.role        = ((user as any).role ?? null) as string | null;
-      }
-      return token;
-    },
-    session({ session, token }) {
-      session.user.id          = token.id as string;
-      session.user.workspaceId = token.workspaceId as string | null;
-      session.user.role        = token.role as string | null;
-      return session;
-    },
-  },
-
-  pages: {
-    signIn: '/login',
-    error:  '/login',
-  },
-
-  session: {
-    strategy: 'jwt',
-    maxAge:   30 * 24 * 60 * 60, // 30 días
-  },
-
-  trustHost: true,
 });

@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
@@ -47,6 +48,36 @@
 
   /* Transitions */
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@theme {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-surface-3: var(--color-surface-3);
+  --color-border: var(--color-border);
+  --color-border-hover: var(--color-border-hover);
+
+  --color-primary: var(--color-primary);
+  --color-primary-light: var(--color-primary-light);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-glow: var(--color-primary-glow);
+
+  --color-income: var(--color-income);
+  --color-income-light: var(--color-income-light);
+  --color-income-glow: var(--color-income-glow);
+  
+  --color-expense: var(--color-expense);
+  --color-expense-light: var(--color-expense-light);
+  --color-expense-glow: var(--color-expense-glow);
+
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-subtle: var(--color-text-subtle);
+  
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
 }
 
 * {
@@ -901,3 +932,155 @@ tbody td {
 .text-expense { color: var(--color-expense); }
 .text-primary { color: var(--color-primary-light); }
 .text-muted { color: var(--color-text-muted); }
+
+/* ===================== AUTH PAGES ===================== */
+.auth-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.auth-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-left {
+  background: var(--color-bg);
+  justify-content: center;
+  align-items: center;
+  padding: 40px 24px;
+}
+
+.auth-right {
+  display: none;
+  background: radial-gradient(circle at center, var(--color-surface-2) 0%, var(--color-bg) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-right::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(ellipse at top right, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+}
+
+@media (min-width: 1024px) {
+  .auth-right {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+.auth-content {
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-form-wrapper {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-card);
+}
+
+.auth-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--color-text);
+}
+
+.auth-subtitle {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin-bottom: 24px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-error {
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  color: var(--color-expense-light);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.auth-hint {
+  font-size: 12px;
+  color: var(--color-text-subtle);
+  margin-top: 6px;
+}
+
+.auth-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.auth-link {
+  color: var(--color-primary-light);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.auth-link:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.auth-decorative {
+  position: relative;
+  z-index: 10;
+  max-width: 480px;
+  text-align: center;
+  padding: 40px;
+}
+
+.auth-tagline {
+  font-size: 48px;
+  line-height: 1.1;
+  font-weight: 800;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #fff, var(--color-text-muted));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-subtagline {
+  font-size: 18px;
+  color: var(--color-text-muted);
+}
+
+/* Password Strength Bar */
+.password-strength-bar {
+  height: 4px;
+  background: var(--color-surface-3);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.strength-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-fill.weak { background-color: var(--color-expense); }
+.strength-fill.medium { background-color: var(--color-warning); }
+.strength-fill.strong { background-color: var(--color-income); }
