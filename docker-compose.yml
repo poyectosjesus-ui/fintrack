@@ -28,7 +28,7 @@ services:
     container_name: fintrack-app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "4000:3000"
     depends_on:
       db:
         condition: service_healthy
