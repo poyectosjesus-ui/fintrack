@@ -1,9 +1,10 @@
 'use client';
 
-import { TopNav } from '@/components/native/TopNav';
+
 import { ChevronRight, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
+import { formatAmount } from '@/lib/format';
 import { getLucideIcon } from '@/lib/icon-mapper';
 
 const fmt = (n: number) =>
@@ -17,11 +18,12 @@ export default function MobileSavingsPage() {
 
   return (
     <>
-      <TopNav title="Ahorros" rightAction={
-        <Link href="/savings/new" className="flex items-center gap-1 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border border-emerald-500/20">
-          <Plus size={14} /> Añadir
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-6 md:pt-8 w-full max-w-screen-xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Ahorros</h1>
+        <Link href="/savings/new" className="bg-emerald-600 text-white hover:bg-emerald-700 px-6 h-12 rounded-full font-bold flex items-center justify-center transition-colors">
+          + Añadir
         </Link>
-      }/>
+      </div>
 
       <div className="px-4 py-6 space-y-8">
         
@@ -108,12 +110,12 @@ export default function MobileSavingsPage() {
                     <div className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800/50 flex justify-between items-center">
                       <div>
                          <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Ahorrado</p>
-                         <p className="font-bold text-white">${current.toFixed(0)}</p>
+                         <p className="font-bold text-white">${formatAmount(current)}</p>
                       </div>
                       <div className="h-8 w-px bg-zinc-800" />
                       <div className="text-right">
                          <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Objetivo</p>
-                         <p className="font-bold text-zinc-300">${target.toFixed(0)}</p>
+                         <p className="font-bold text-zinc-300">${formatAmount(target)}</p>
                       </div>
                     </div>
 

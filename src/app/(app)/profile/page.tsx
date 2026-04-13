@@ -1,8 +1,8 @@
-import { TopNav } from '@/components/native/TopNav';
-import { User, Settings, Users, Shield, ChevronRight } from 'lucide-react';
+import { User, Settings, Users, Shield, ChevronRight, Tags } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { LogoutButton } from '@/components/auth/LogoutButton';
+import Link from 'next/link';
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -15,7 +15,9 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <TopNav title="Ajustes" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-6 md:pt-8 w-full max-w-screen-xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Ajustes</h1>
+      </div>
 
       <div className="px-4 py-6 space-y-8">
         
@@ -73,6 +75,15 @@ export default async function ProfilePage() {
                    </div>
                    <ChevronRight size={20} className="text-zinc-600" />
                  </button>
+
+                 <Link href="/profile/categories" className="w-full flex items-center justify-between p-5 hover:bg-zinc-900 transition-colors group">
+                   <div className="flex items-center gap-4">
+                     <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform"><Tags size={20} /></div>
+                     <span className="font-semibold text-zinc-100">Gestión de Categorías</span>
+                   </div>
+                   <ChevronRight size={20} className="text-zinc-600" />
+                 </Link>
+
                  <button className="w-full flex items-center justify-between p-5 hover:bg-zinc-900 transition-colors group">
                    <div className="flex items-center gap-4">
                      <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform"><Shield size={20} /></div>

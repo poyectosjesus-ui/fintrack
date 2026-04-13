@@ -1,12 +1,10 @@
 'use client';
 
-import { TopNav } from '@/components/native/TopNav';
 import Link from 'next/link';
 
 export default function MockAppBudgets() {
   return (
     <>
-      <TopNav title="Presupuestos" rightAction={<Link href="/mock_app/budgets/new" className="text-indigo-400 text-xl font-medium">+</Link>}/>
 
       <div className="px-4 py-4 space-y-5">
         {[

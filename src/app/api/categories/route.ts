@@ -11,7 +11,7 @@ import { AppError } from '../_lib/errors';
 const CreateCategorySchema = z.object({
   name:      z.string().min(1).max(60).trim(),
   type:      z.enum(['INCOME', 'EXPENSE']),
-  icon:      z.string().emoji().default('📌'),
+  icon:      z.string().min(1).max(50).default('Tag'), // Usamos strings limpias para llaves de Lucide
   color:     z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color debe ser hex p.ej. #ab12cd').default('#6366f1'),
   parentId:  z.string().cuid().optional(),
   sortOrder: z.number().int().min(0).default(0),

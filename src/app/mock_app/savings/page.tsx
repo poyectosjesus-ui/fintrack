@@ -1,13 +1,11 @@
 'use client';
 
-import { TopNav } from '@/components/native/TopNav';
 import { Target, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MockAppSavings() {
   return (
     <>
-      <TopNav title="Ahorros" rightAction={<Link href="/mock_app/savings/new" className="text-emerald-400 font-medium">Añadir</Link>}/>
 
       <div className="px-4 py-4 space-y-6">
         

@@ -1,12 +1,10 @@
 'use client';
 
-import { TopNav } from '@/components/native/TopNav';
 import { User, Settings, Users, LogOut, Shield, ChevronRight } from 'lucide-react';
 
 export default function MockAppProfile() {
   return (
     <>
-      <TopNav title="Ajustes" />
 
       <div className="px-4 py-4 space-y-6">
         

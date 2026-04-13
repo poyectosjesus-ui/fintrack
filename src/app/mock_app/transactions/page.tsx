@@ -1,12 +1,10 @@
 'use client';
 
-import { TopNav } from '@/components/native/TopNav';
 import { Search, Filter } from 'lucide-react';
 
 export default function MockAppTransactions() {
   return (
     <>
-      <TopNav title="Historial" />
 
       {/* Header Actions */}
       <div className="sticky top-[60px] z-30 bg-zinc-950 px-4 py-2 flex gap-2">

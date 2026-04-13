@@ -1,10 +1,11 @@
 'use client';
 
 import { useApi } from '@/hooks/use-api';
-import { TopNav } from '@/components/native/TopNav';
+
 import { Bell, ArrowUpRight, ArrowDownRight, Activity, Wallet, Receipt, CreditCard, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { getLucideIcon } from '@/lib/icon-mapper';
+import { formatAmount } from '@/lib/format';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
@@ -19,10 +20,10 @@ export default function DashboardPage() {
 
   return (
     <>
-      <TopNav 
-        title="Dashboard" 
-        rightAction={<button className="p-2 outline-none flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded-full h-10 w-10 transition-colors hover:bg-zinc-800"><Bell size={18} className="text-zinc-400" /></button>}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-6 md:pt-8 w-full max-w-screen-xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Dashboard</h1>
+        <button className="p-2 outline-none flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded-full h-12 w-12 transition-colors hover:bg-zinc-800 self-start sm:self-auto"><Bell size={20} className="text-zinc-400" /></button>
+      </div>
       
       <div className="px-4 py-6 space-y-8">
         
@@ -131,7 +132,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <span className={`font-bold text-sm shrink-0 pl-2 ${tx.type === 'INCOME' ? 'text-emerald-400' : 'text-zinc-100'}`}>
-                          {tx.type === 'INCOME' ? '+' : '-'}${Number(tx.amount).toFixed(2)}
+                          {tx.type === 'INCOME' ? '+' : '-'}${formatAmount(tx.amount)}
                         </span>
                       </Link>
                     )

@@ -1,6 +1,6 @@
 'use client';
 
-import { TopNav } from '@/components/native/TopNav';
+
 import { Calendar, Play, Pause, Plus, CreditCard, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
@@ -28,11 +28,12 @@ export default function MobileSubscriptionsPage() {
 
   return (
     <>
-      <TopNav title="Suscripciones" rightAction={
-        <Link href="/subscriptions/new" className="flex items-center gap-1 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border border-indigo-500/20">
-          <Plus size={14} /> Añadir
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-6 md:pt-8 w-full max-w-screen-xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Suscripciones</h1>
+        <Link href="/subscriptions/new" className="bg-indigo-600 text-white hover:bg-indigo-700 px-6 h-12 rounded-full font-bold flex items-center justify-center transition-colors">
+          + Añadir
         </Link>
-      }/>
+      </div>
 
       <div className="px-4 py-6 space-y-8">
         

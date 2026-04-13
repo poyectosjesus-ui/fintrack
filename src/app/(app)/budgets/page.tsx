@@ -1,8 +1,9 @@
 'use client';
 
-import { TopNav } from '@/components/native/TopNav';
+
 import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
+import { formatAmount } from '@/lib/format';
 import { getLucideIcon } from '@/lib/icon-mapper';
 import { Plus, Wallet, AlertCircle } from 'lucide-react';
 
@@ -12,11 +13,12 @@ export default function MobileBudgetsPage() {
 
   return (
     <>
-      <TopNav title="Presupuestos" rightAction={
-        <Link href="/budgets/new" className="flex items-center gap-1 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border border-indigo-500/20">
-          <Plus size={14} /> Añadir
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-6 md:pt-8 w-full max-w-screen-xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Presupuestos</h1>
+        <Link href="/budgets/new" className="bg-indigo-600 text-white hover:bg-indigo-700 px-6 h-12 rounded-full font-bold flex items-center justify-center transition-colors">
+          + Añadir
         </Link>
-      } />
+      </div>
 
       <div className="px-4 py-6">
         {loading ? (
@@ -55,8 +57,8 @@ export default function MobileBudgetsPage() {
                   <div>
                     <div className="flex justify-between items-end mb-3">
                       <div>
-                        <span className="font-black text-2xl text-white">${Number(bg.spent || 0).toFixed(2)}</span>
-                        <span className="text-zinc-500 text-sm font-semibold ml-2">/ ${Number(bg.amount).toFixed(2)}</span>
+                        <span className="font-black text-2xl text-white">${formatAmount(bg.spent || 0)}</span>
+                        <span className="text-zinc-500 text-sm font-semibold ml-2">/ ${formatAmount(bg.amount)}</span>
                       </div>
                       <span className={`text-sm font-black ${isAlert ? 'text-rose-400' : 'text-zinc-400'}`}>{pct.toFixed(0)}%</span>
                     </div>

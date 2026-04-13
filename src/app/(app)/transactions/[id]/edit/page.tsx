@@ -1,42 +1,49 @@
 'use client';
 
-import { BottomSheet } from '@/components/native/BottomSheet';
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api-client';
-import { useApi } from '@/hooks/use-api';
+import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function EditTransactionMobile({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
   
-  // Fetch transaction and categories
-  const { data: tx, loading: txLoading } = useApi<any>(`/api/transactions/${id}`);
-  const [categories, setCategories] = useState<any[]>([]);
-
   const [type, setType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [description, setDescription] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [isOpen, setIsOpen] = useState(true);
 
-  // Pre-fill form when tx loads
-  useEffect(() => {
-    if (tx) {
-      setType(tx.type);
-      setAmount(tx.amount.toString());
-      setCategoryId(tx.categoryId);
-      setDescription(tx.description);
-    }
-  }, [tx]);
-
-  // Load categories
   useEffect(() => {
     api.get<any[]>('/api/categories').then((res) => {
       if (res.data) setCategories(res.data);
+      
+      api.get<any>(`/api/transactions/${id}`).then((txRes) => {
+        if (txRes.data) {
+          setType(txRes.data.type);
+          setAmount(txRes.data.amount.toString());
+          setCategoryId(txRes.data.categoryId);
+          setDescription(txRes.data.description);
+        }
+      });
     });
-  }, []);
+  }, [id]);
+
+  const closeModal = () => {
+    setIsOpen(false);
+    setTimeout(() => {
+      router.back();
+    }, 200);
+  };
 
   const handleUpdate = async () => {
     setError('');
@@ -47,91 +54,149 @@ export default function EditTransactionMobile({ params }: { params: Promise<{ id
 
     setLoading(true);
     const res = await api.put(`/api/transactions/${id}`, {
+      type,
       amount: amt,
       categoryId,
-      description
+      description,
+      currency: 'MXN'
     });
     setLoading(false);
 
     if (res.error) {
       setError(res.error);
     } else {
-      router.push(`/transactions/${id}`); // Return to details
+      router.push('/transactions');
       router.refresh();
     }
   };
 
-  if (txLoading) return <BottomSheet title="Cargando..."><div className="h-64 flex justify-center items-center"><span className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></span></div></BottomSheet>;
+  const handleDelete = async () => {
+    if (!confirm('¿Seguro que deseas eliminar esta transacción?')) return;
+    setDeleting(true);
+    const res = await api.delete(`/api/transactions/${id}`);
+    if (res.error) {
+      setError(res.error);
+      setDeleting(false);
+    } else {
+      router.push('/transactions');
+      router.refresh();
+    }
+  };
+
+  const isIncome = type === 'INCOME';
 
   return (
-    <BottomSheet title="Editar Registro">
-      <div className="py-4 space-y-6">
+    <Dialog open={isOpen} onOpenChange={closeModal}>
+      <DialogContent onClose={closeModal} className="overflow-hidden p-0 border-zinc-800">
         
-        {/* Type is non-editable in this basic version, just display */}
-        <div className="flex p-1 bg-zinc-800/50 rounded-2xl w-full">
-          <div className={`flex-1 py-2 text-center text-sm font-bold rounded-xl shadow ${type === 'EXPENSE' ? 'bg-zinc-700/80 shadow-black text-rose-400' : 'text-zinc-500 opacity-50'}`}>
-            Gasto (-)
-          </div>
-          <div className={`flex-1 py-2 text-center text-sm font-bold rounded-xl shadow ${type === 'INCOME' ? 'bg-zinc-700/80 shadow-black text-emerald-400' : 'text-zinc-500 opacity-50'}`}>
-            Ingreso (+)
-          </div>
-        </div>
-
-        {/* Monto */}
-        <div className="flex flex-col items-center py-6 border-b border-zinc-800">
-          <span className="text-zinc-500 font-medium mb-2">Monto Actual</span>
-          <div className={`flex items-center text-5xl font-extrabold ${type === 'EXPENSE' ? 'text-white' : 'text-emerald-400'}`}>
-            <span className="text-zinc-500 mr-2">$</span>
-            <input 
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              className="bg-transparent w-40 text-center outline-none placeholder:text-zinc-700"
-            />
-          </div>
-        </div>
-
-        {/* Form fields */}
-        <div className="space-y-4">
-          <div className="bg-zinc-800/30 border border-zinc-800 rounded-2xl p-4 flex flex-col gap-1 relative focus-within:border-zinc-500 transition-colors">
-            <label className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Categoría</label>
-            <select 
-              value={categoryId} 
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="bg-transparent text-white font-medium outline-none w-full appearance-none mt-1"
+        <div className="p-6 pb-2 border-b border-zinc-800/50 relative">
+          <div className={`absolute inset-0 opacity-10 blur-xl transition-colors duration-500 pointer-events-none ${isIncome ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+          <div className="flex justify-between items-start relative z-10">
+            <DialogHeader>
+              <DialogTitle>Editar Registro</DialogTitle>
+              <DialogDescription>Modifica los datos de la transacción o elimínala.</DialogDescription>
+            </DialogHeader>
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="w-8 h-8 rounded-full"
+              title="Eliminar transacción"
             >
-              <option value="" className="bg-zinc-900 text-zinc-500">Selecciona una categoría...</option>
-              {categories.filter(c => c.type === type).map(c => (
-                <option key={c.id} value={c.id} className="bg-zinc-900">
-                  {c.icon} {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="bg-zinc-800/30 border border-zinc-800 rounded-2xl p-4 flex flex-col gap-1 focus-within:border-zinc-500 transition-colors">
-            <label className="text-xs text-zinc-500 uppercase font-bold tracking-wider">Concepto</label>
-            <input 
-              type="text" 
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ej. Tacos del centro..."
-              className="bg-transparent text-white focus:outline-none w-full font-medium" 
-            />
+              <Trash2 size={14} />
+            </Button>
           </div>
         </div>
 
-        {error && <div className="text-rose-400 text-sm font-medium text-center">{error}</div>}
+        <div className="p-6 space-y-6">
+          {/* Toggle Type */}
+          <div className="flex p-1 bg-zinc-900 rounded-xl w-full border border-zinc-800">
+            <Button 
+              type="button"
+              variant={!isIncome ? 'secondary' : 'ghost'}
+              onClick={() => setType('EXPENSE')}
+              className={`flex-1 flex gap-2 h-11 ${!isIncome ? 'text-rose-400 bg-zinc-800 hover:text-rose-300 shadow-sm' : 'text-zinc-500'}`}
+            >
+              <ArrowUp size={16} /> Gasto
+            </Button>
+            <Button 
+              type="button"
+              variant={isIncome ? 'secondary' : 'ghost'}
+              onClick={() => setType('INCOME')}
+              className={`flex-1 flex gap-2 h-11 ${isIncome ? 'text-emerald-400 bg-zinc-800 hover:text-emerald-300 shadow-sm' : 'text-zinc-500'}`}
+            >
+              <ArrowDown size={16} /> Ingreso
+            </Button>
+          </div>
 
-        <button 
-          onClick={handleUpdate}
-          disabled={loading}
-          className="w-full bg-indigo-500 disabled:opacity-50 disabled:active:scale-100 text-white font-bold text-lg py-4 rounded-2xl active:scale-95 transition-transform mt-8 shadow-[0_4px_20px_rgba(99,102,241,0.4)]"
-        >
-          {loading ? 'Guardando cambios...' : 'Actualizar Registro'}
-        </button>
-      </div>
-    </BottomSheet>
+          <div className="space-y-5">
+            <div className="grid gap-2">
+              <Label htmlFor="amount" className="ml-1 text-zinc-400">{isIncome ? 'Dinero Recibido' : 'Dinero Gastado'}</Label>
+              <div className="relative flex items-center">
+                <span className="absolute left-4 text-zinc-500 font-bold text-lg select-none pointer-events-none">$</span>
+                <Input 
+                  id="amount"
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="pl-11 h-12 text-lg font-bold bg-zinc-950 border-zinc-800 focus-visible:ring-indigo-500/30"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="category" className="ml-1 text-zinc-400">Categoría</Label>
+              <div className="relative">
+                <select 
+                  id="category"
+                  value={categoryId} 
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="flex h-12 w-full appearance-none rounded-md border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors"
+                >
+                  <option value="" className="text-zinc-500">Seleccionar categoría...</option>
+                  {categories.filter(c => c.type === type).map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-500">
+                  <ArrowDown size={14} />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description" className="ml-1 text-zinc-400">Concepto / Nombre</Label>
+              <Input 
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Ej. Gasolina o Pago Quincenal..."
+                className="h-12 px-4 bg-zinc-950 border-zinc-800 focus-visible:ring-indigo-500/30"
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-sm font-medium text-rose-500 text-center">{error}</p>}
+        </div>
+
+        <DialogFooter className="p-6 pt-2">
+          <Button variant="outline" onClick={closeModal} disabled={loading || deleting} className="w-full sm:w-auto mt-2 sm:mt-0">
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleUpdate}
+            disabled={loading || deleting}
+            className={`w-full sm:w-auto ${isIncome ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+          >
+            {loading ? 'Actualizando...' : 'Terminar Edición'}
+          </Button>
+        </DialogFooter>
+
+      </DialogContent>
+    </Dialog>
   );
 }

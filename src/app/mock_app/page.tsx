@@ -1,12 +1,10 @@
 'use client';
 
-import { TopNav } from '@/components/native/TopNav';
 import { Bell, ArrowUpRight, ArrowDownRight, Wallet, Target } from 'lucide-react';
 
 export default function MockAppHome() {
   return (
     <>
-      <TopNav 
         title="Finanzas Familiares" 
         rightAction={<button className="p-2"><Bell size={20} className="text-zinc-400" /></button>}
       />

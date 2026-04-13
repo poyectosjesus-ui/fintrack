@@ -1,13 +1,11 @@
 'use client';
 
-import { TopNav } from '@/components/native/TopNav';
 import { Calendar, Play, Pause, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MockAppSubscriptions() {
   return (
     <>
-      <TopNav title="Suscripciones" rightAction={<Link href="/mock_app/subscriptions/new" className="text-indigo-400 font-medium">Añadir</Link>}/>
 
       <div className="px-4 py-4 space-y-6">
         
