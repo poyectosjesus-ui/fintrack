@@ -1,87 +1,83 @@
 'use client';
 
+import { TopNav } from '@/components/native/TopNav';
+import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
+import { getLucideIcon } from '@/lib/icon-mapper';
+import { Plus, Wallet, AlertCircle } from 'lucide-react';
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
-
-export default function BudgetsPage() {
-  const { data, loading } = useApi<any[]>('/api/budgets');
-  const budgets = data || [];
+export default function MobileBudgetsPage() {
+  const { data, loading } = useApi<any>('/api/budgets');
+  const budgets = data?.data || [];
 
   return (
-    <div className="py-6 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-text to-primary-light">
-            Presupuestos
-          </h1>
-          <p className="text-text-muted text-sm mt-1">
-            Control de gastos por categoría
-          </p>
-        </div>
-        <button className="btn btn-primary text-sm rounded-lg px-4">
-          + Nuevo Presupuesto
-        </button>
-      </div>
+    <>
+      <TopNav title="Presupuestos" rightAction={
+        <Link href="/budgets/new" className="flex items-center gap-1 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border border-indigo-500/20">
+          <Plus size={14} /> Añadir
+        </Link>
+      } />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="px-4 py-6">
         {loading ? (
-          [1,2].map(i => <div key={i} className="loading-skeleton h-48 w-full rounded-xl" />)
+           <div className="flex justify-center p-12"><span className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></span></div>
         ) : budgets.length === 0 ? (
-          <div className="col-span-full py-12 text-center border border-border rounded-xl bg-surface-2 border-dashed">
-            <span className="text-4xl mb-3 opacity-50">📊</span>
-            <p className="text-text-muted mb-4">Aún no has configurado presupuestos</p>
-            <button className="btn btn-secondary text-sm">Crear Presupuesto</button>
-          </div>
+           <div className="flex flex-col items-center justify-center p-16 text-center bg-zinc-950 border border-zinc-800 border-dashed rounded-3xl">
+              <Wallet size={48} className="text-zinc-800 mb-4" />
+              <p className="text-zinc-500 font-medium">No has establecido ningún límite de presupuesto aún.</p>
+           </div>
         ) : (
-          budgets.map(budget => {
-            // progress info is baked in from the backend /api/budgets
-            const spent = budget.spent || 0;
-            const amount = budget.amount;
-            const pct = Math.min((spent / amount) * 100, 100);
-            
-            // Dynamic color logic based on alertAt threshold
-            const isAlert = pct >= budget.alertAt;
-            const isWarning = pct >= (budget.alertAt * 0.8) && !isAlert;
-            const colorClass = isAlert ? 'bg-expense' : isWarning ? 'bg-warning' : 'bg-income';
-            
-            return (
-              <div key={budget.id} className="bg-surface border border-border rounded-xl p-6 shadow-card hover:border-border-hover transition-colors">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style={{ backgroundColor: `${budget.category.color}20`, color: budget.category.color }}>
-                      {budget.category.icon}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {budgets.map((bg: any) => {
+              const pct = Math.min(((bg.spent || 0) / bg.amount) * 100, 100);
+              const isAlert = pct >= 90;
+              const BgIcon = getLucideIcon(bg.category.icon);
+              
+              return (
+                <div key={bg.id} className="bg-zinc-950 rounded-3xl p-6 shadow-xl border border-zinc-800/80 hover:border-zinc-700 transition-colors flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner border border-zinc-700/50" style={{ backgroundColor: `${bg.category.color}15`, color: bg.category.color }}>
+                        <BgIcon size={24} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-zinc-100 text-lg">{bg.category.name}</h3>
+                        <p className="text-xs text-zinc-500 font-medium mt-0.5 capitalize">{bg.period.toLowerCase()}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-lg leading-none">{budget.category.name}</h3>
-                      <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{budget.period}</p>
-                    </div>
-                  </div>
-                  {isAlert && <span className="bg-expense-glow text-expense-light text-[10px] px-2 py-0.5 rounded font-bold uppercase">Alerta</span>}
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <span className="text-2xl font-bold">{fmt(spent)}</span>
-                      <span className="text-text-muted text-sm ml-1">/ {fmt(amount)}</span>
-                    </div>
-                    <span className="text-sm font-semibold">{pct.toFixed(0)}%</span>
+                    {isAlert && (
+                      <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-2 rounded-full flex shrink-0" title="Alerta de sobregiro">
+                        <AlertCircle size={18} />
+                      </div>
+                    )}
                   </div>
 
-                  <div className="h-3 w-full bg-surface-3 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-1000 ease-out ${colorClass}`} 
-                      style={{ width: `${pct}%` }}
-                    />
+                  <div>
+                    <div className="flex justify-between items-end mb-3">
+                      <div>
+                        <span className="font-black text-2xl text-white">${Number(bg.spent || 0).toFixed(2)}</span>
+                        <span className="text-zinc-500 text-sm font-semibold ml-2">/ ${Number(bg.amount).toFixed(2)}</span>
+                      </div>
+                      <span className={`text-sm font-black ${isAlert ? 'text-rose-400' : 'text-zinc-400'}`}>{pct.toFixed(0)}%</span>
+                    </div>
+
+                    <div className="h-3 w-full bg-zinc-900 rounded-full overflow-hidden shadow-inner border border-zinc-800">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-1000 ${isAlert ? 'bg-gradient-to-r from-rose-500 to-rose-400' : ''}`} 
+                        style={{ 
+                          width: `${pct}%`, 
+                          backgroundColor: isAlert ? undefined : bg.category.color,
+                          boxShadow: isAlert ? 'none' : `inset 0 0 10px ${bg.category.color}80` 
+                        }} 
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
+              )
+            })}
+          </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

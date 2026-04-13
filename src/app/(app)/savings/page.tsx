@@ -1,98 +1,129 @@
 'use client';
 
+import { TopNav } from '@/components/native/TopNav';
+import { ChevronRight, Plus, Target } from 'lucide-react';
+import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { getLucideIcon } from '@/lib/icon-mapper';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
 
-export default function SavingsPage() {
-  const { data, loading } = useApi<any[]>('/api/savings');
-  const savings = data || [];
+export default function MobileSavingsPage() {
+  const { data, loading } = useApi<any>('/api/savings');
+  const goals = data?.data || [];
+
+  const totalSaved = goals.reduce((acc: number, g: any) => acc + Number(g.currentAmount), 0);
 
   return (
-    <div className="py-6 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-text to-primary-light">
-            Metas de Ahorro
-          </h1>
-          <p className="text-text-muted text-sm mt-1">
-            Haz seguimiento a tus objetivos financieros
-          </p>
-        </div>
-        <button className="btn btn-primary text-sm rounded-lg px-4">
-          + Nueva Meta
-        </button>
-      </div>
+    <>
+      <TopNav title="Ahorros" rightAction={
+        <Link href="/savings/new" className="flex items-center gap-1 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border border-emerald-500/20">
+          <Plus size={14} /> Añadir
+        </Link>
+      }/>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {loading ? (
-          [1,2].map(i => <div key={i} className="loading-skeleton h-56 w-full rounded-xl" />)
-        ) : savings.length === 0 ? (
-          <div className="col-span-full py-12 text-center border border-border rounded-xl bg-surface-2 border-dashed">
-            <span className="text-4xl mb-3 opacity-50">🎯</span>
-            <p className="text-text-muted mb-4">No tienes metas de ahorro</p>
-            <button className="btn btn-secondary text-sm">Crear Meta</button>
+      <div className="px-4 py-6 space-y-8">
+        
+        {/* Total Savings Hero */}
+        <div className="bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2 text-emerald-400">
+              <Target size={18} />
+              <p className="font-semibold text-sm uppercase tracking-wider">Ahorro Acumulado</p>
+            </div>
+            <h2 className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">
+              {loading ? '...' : fmt(totalSaved)}
+            </h2>
           </div>
-        ) : (
-          savings.map(goal => {
-            const pct = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
-            const isCompleted = goal.status === 'COMPLETED';
-            
-            return (
-              <div key={goal.id} className="bg-surface border border-border rounded-xl p-6 shadow-card relative overflow-hidden flex flex-col md:flex-row gap-6 items-center md:items-start group">
+
+          {!loading && goals.length > 0 && (
+             <div className="relative z-10 bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-2xl p-4 flex gap-6">
+                <div>
+                   <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-1">Metas Activas</p>
+                   <p className="text-2xl font-bold text-zinc-100">{goals.length}</p>
+                </div>
+             </div>
+          )}
+        </div>
+
+        {/* Goals Grid */}
+        <div className="space-y-4">
+          <h3 className="font-bold text-white text-lg px-2 flex items-center gap-2">
+            <Target size={18} className="text-emerald-500" />
+            Vías de Ahorro
+          </h3>
+
+          {loading ? (
+             <div className="flex justify-center p-8"><span className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></span></div>
+          ) : goals.length === 0 ? (
+             <div className="flex flex-col items-center justify-center p-16 text-center bg-zinc-950 border border-zinc-800 border-dashed rounded-3xl">
+                <Target size={48} className="text-zinc-800 mb-4" />
+                <p className="text-zinc-500 font-medium">No has creado metas de ahorro.</p>
+             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {goals.map((goal: any) => {
+                const current = Number(goal.currentAmount);
+                const target = Number(goal.targetAmount);
+                const pct = Math.min((current / target) * 100, 100);
+                const GoalIcon = getLucideIcon(goal.icon || 'Target');
                 
-                {/* SVG Circular Progress */}
-                <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="45" fill="none" stroke="var(--color-surface-3)" strokeWidth="8" />
-                    <circle 
-                      cx="50" cy="50" r="45" fill="none" 
-                      stroke={isCompleted ? 'var(--color-income)' : 'var(--color-primary)'} 
-                      strokeWidth="8"
-                      strokeDasharray={283} // 2 * pi * r
-                      strokeDashoffset={283 - (283 * pct) / 100}
-                      className="transition-all duration-1000 ease-out"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute flex flex-col items-center">
-                    <span className="text-2xl opacity-80 mb-1">{goal.icon || '🎯'}</span>
-                    <span className="text-xs font-bold">{pct.toFixed(0)}%</span>
-                  </div>
-                </div>
+                return (
+                  <Link href={`/savings/${goal.id}/add`} key={goal.id} className="group bg-zinc-950 rounded-3xl p-6 shadow-xl border border-zinc-800/80 hover:border-emerald-500/30 transition-all cursor-pointer flex flex-col gap-6">
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {/* Circular ring */}
+                        <div className="relative w-16 h-16 flex-shrink-0 flex items-center justify-center">
+                          <svg className="w-full h-full transform -rotate-90 drop-shadow-lg">
+                            <circle cx="32" cy="32" r="28" fill="none" className="stroke-zinc-900" strokeWidth="6" />
+                            <circle 
+                              cx="32" cy="32" r="28" fill="none" 
+                              className="transition-all duration-1000 delay-300 stroke-current text-emerald-500"
+                              strokeWidth="6" strokeLinecap="round"
+                              strokeDasharray={176} strokeDashoffset={176 - (176 * pct) / 100}
+                            />
+                          </svg>
+                          <span className="absolute text-emerald-400 group-hover:scale-110 transition-transform">
+                            <GoalIcon size={22} />
+                          </span>
+                        </div>
 
-                <div className="flex-1 w-full text-center md:text-left">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-lg">{goal.name}</h3>
-                    {isCompleted && <span className="bg-income-glow text-income-light text-[10px] px-2 py-0.5 rounded font-bold uppercase">Completado</span>}
-                  </div>
-                  
-                  <div className="mt-2 space-y-1">
-                    <div className="text-sm font-semibold text-text">{fmt(goal.currentAmount)} <span className="font-normal text-text-muted text-xs">/ {fmt(goal.targetAmount)}</span></div>
-                    {goal.targetDate && (
-                      <p className="text-xs text-text-muted">
-                        Para el {format(new Date(goal.targetDate), "dd MMM yyyy", { locale: es })}
-                      </p>
-                    )}
-                  </div>
+                        <div className="overflow-hidden">
+                          <h4 className="font-bold text-zinc-100 text-lg truncate group-hover:text-emerald-400 transition-colors">{goal.name}</h4>
+                          <span className="text-sm font-semibold text-emerald-400 mt-1 block">
+                            {pct.toFixed(1)}% <span className="text-zinc-600">completado</span>
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:text-emerald-400 pointer-events-none transition-colors hidden md:flex shrink-0">
+                         <ChevronRight size={16} />
+                      </div>
+                    </div>
 
-                  <div className="mt-5 flex gap-2 justify-center md:justify-start">
-                    <button className="btn btn-secondary text-xs py-1.5 px-3" disabled={isCompleted}>
-                      Aportar
-                    </button>
-                    <button className="btn text-xs py-1.5 px-3 bg-surface-2 hover:bg-surface-3 text-text-muted border border-border">
-                      Ver Historial
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
+                    <div className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800/50 flex justify-between items-center">
+                      <div>
+                         <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Ahorrado</p>
+                         <p className="font-bold text-white">${current.toFixed(0)}</p>
+                      </div>
+                      <div className="h-8 w-px bg-zinc-800" />
+                      <div className="text-right">
+                         <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Objetivo</p>
+                         <p className="font-bold text-zinc-300">${target.toFixed(0)}</p>
+                      </div>
+                    </div>
+
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -1,124 +1,81 @@
 'use client';
 
-import { useState } from 'react';
 import { useApi } from '@/hooks/use-api';
-import { format } from 'date-fns';
+import { TopNav } from '@/components/native/TopNav';
+import { Search, Filter } from 'lucide-react';
+import { format, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
+import Link from 'next/link';
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
+export default function MobileTransactionsPage() {
+  const { data, loading } = useApi<any>('/api/transactions?limit=50');
+  const transactions = data?.data || [];
 
-export default function TransactionsPage() {
-  const [page, setPage] = useState(1);
-  const { data, loading } = useApi<any>(`/api/transactions?page=${page}&limit=20`);
-
-  const txs = data?.data || [];
-  const meta = data?.meta || { page: 1, pages: 1, total: 0 };
+  // Group transactions by date
+  const grouped = transactions.reduce((acc: any, tx: any) => {
+    const d = new Date(tx.date);
+    let key = format(d, "dd MMM yyyy", { locale: es });
+    if (isToday(d)) key = 'Hoy';
+    else if (isYesterday(d)) key = 'Ayer';
+    
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(tx);
+    return acc;
+  }, {});
 
   return (
-    <div className="py-6 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-text to-primary-light">
-            Transacciones
-          </h1>
-          <p className="text-text-muted text-sm mt-1">
-            Gestiona tus ingresos y gastos
-          </p>
-        </div>
-        <button className="btn btn-primary text-sm rounded-lg px-4 shadow-[0_4px_16px_rgba(99,102,241,0.2)]">
-          + Nueva Transacción
-        </button>
-      </div>
-
-      <div className="bg-surface border border-border rounded-xl shadow-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[600px]">
-             <thead>
-              <tr className="bg-surface-2">
-                <th className="p-4 text-xs font-semibold text-text-muted uppercase tracking-wider">Descripción</th>
-                <th className="p-4 text-xs font-semibold text-text-muted uppercase tracking-wider">Categoría</th>
-                <th className="p-4 text-xs font-semibold text-text-muted uppercase tracking-wider">Tipo</th>
-                <th className="p-4 text-xs font-semibold text-text-muted uppercase tracking-wider text-right">Monto</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="p-8 text-center text-text-muted">
-                    <div className="flex flex-col gap-4">
-                      <div className="loading-skeleton h-12 w-full rounded" />
-                      <div className="loading-skeleton h-12 w-full rounded" />
-                      <div className="loading-skeleton h-12 w-full rounded" />
-                    </div>
-                  </td>
-                </tr>
-              ) : txs.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-12 text-center">
-                    <div className="inline-flex flex-col items-center">
-                      <span className="text-4xl mb-3 opacity-50">💸</span>
-                      <p className="text-text-muted">Aún no hay transacciones</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                txs.map((tx: any) => (
-                  <tr key={tx.id} className="border-b border-border hover:bg-surface-2 transition-colors">
-                    <td className="p-4">
-                      <div className="font-medium text-sm">{tx.description}</div>
-                      <div className="text-xs text-text-muted">{format(new Date(tx.date), "dd MMM yyyy", { locale: es })}</div>
-                    </td>
-                    <td className="p-4">
-                      <span 
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-opacity-10 border shadow-sm"
-                        style={{ color: tx.category.color, borderColor: `${tx.category.color}40`, backgroundColor: `${tx.category.color}15` }}
-                      >
-                        <span>{tx.category.icon}</span> {tx.category.name}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${tx.type === 'INCOME' ? 'bg-income-glow text-income-light' : 'bg-expense-glow text-expense-light'}`}>
-                        {tx.type === 'INCOME' ? 'Ingreso' : 'Gasto'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right font-bold text-sm">
-                      <span className={tx.type === 'INCOME' ? 'text-income' : 'text-expense'}>
-                        {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.amount)}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+    <>
+      <TopNav title="" rightAction={<button className="text-zinc-400 mt-1"><Filter size={20}/></button>}/>
+      <div className="px-4 pb-4">
+        
+        {/* Search Header */}
+        <div className="mb-4">
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zinc-100 to-zinc-400">Historial</h1>
+          <div className="mt-4 flex items-center bg-zinc-800/50 backdrop-blur-md px-4 py-3 rounded-2xl border border-zinc-700/50 shadow-inner">
+            <Search size={18} className="text-zinc-500 mr-3" />
+            <input 
+              type="text" 
+              placeholder="Buscar comercios, categorías..." 
+              className="bg-transparent border-none outline-none text-zinc-200 w-full placeholder-zinc-500 text-sm font-medium"
+            />
+          </div>
         </div>
 
-        {/* Paginación */}
-        {meta.pages > 1 && (
-          <div className="p-4 border-t border-border flex items-center justify-between bg-surface-2">
-             <span className="text-xs text-text-muted">
-               Página {meta.page} de {meta.pages}
-             </span>
-             <div className="flex gap-2">
-               <button 
-                 disabled={meta.page <= 1} 
-                 onClick={() => setPage(p => p - 1)}
-                 className="p-1 px-3 border border-border rounded text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-3 transition-colors"
-               >
-                 Anterior
-               </button>
-               <button 
-                 disabled={meta.page >= meta.pages} 
-                 onClick={() => setPage(p => p + 1)}
-                 className="p-1 px-3 border border-border rounded text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-3 transition-colors"
-               >
-                 Siguiente
-               </button>
-             </div>
+        {/* List */}
+        {loading ? (
+          <div className="flex justify-center p-8"><span className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></span></div>
+        ) : transactions.length === 0 ? (
+          <div className="text-center py-12 text-zinc-500 font-medium">No hay transacciones aún.</div>
+        ) : (
+          <div className="space-y-6">
+            {Object.keys(grouped).map((groupTitle) => (
+              <div key={groupTitle} className="space-y-3">
+                <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider pl-2">{groupTitle}</h4>
+                <div className="bg-zinc-900 rounded-[28px] p-2 shadow-sm border border-zinc-800">
+                  {grouped[groupTitle].map((tx: any) => (
+                    <Link href={`/transactions/${tx.id}`} key={tx.id} className="flex items-center justify-between p-3 rounded-2xl active:bg-zinc-800 transition-colors cursor-pointer block">
+                      <div className="flex items-center justify-between pointer-events-none">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg border border-white/5" style={{ backgroundColor: `${tx.category.color}20` }}>
+                            {tx.category.icon}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm text-zinc-200">{tx.description}</h4>
+                            <p className="text-xs text-zinc-500">{tx.category.name}</p>
+                          </div>
+                        </div>
+                        <span className={`font-bold ${tx.type === 'INCOME' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {tx.type === 'INCOME' ? '+' : '-'}${Number(tx.amount).toFixed(2)}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

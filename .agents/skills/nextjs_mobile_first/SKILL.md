@@ -27,12 +27,15 @@ author: FinTrack Dev Team
 license: MIT
 ---
 
-# Skill: Next.js Mobile-First — Fundamentos
+# Skill: Next.js Mobile-First Native App Experience
 
-Este skill guía el desarrollo de interfaces mobile-first modernas usando
-**Next.js 14+**, **React 19**, **Tailwind CSS**, **TypeScript** y herramientas
-de producción. Cada componente es production-ready con cero errores en runtime,
-testing completo y optimización de performance.
+<identity>
+**Para Antigravity (AI Coding Assistant):**  
+Este skill dicta las reglas fundamentales que **DEBES** seguir irrestrictamente al crear o modificar interfaces de usuario web móviles. Como Antigravity, estás encargado de que toda app frontend se sienta y luzca exactamente como una **Aplicación Nativa (iOS/Android)** usando Next.js 16+ y Tailwind CSS v4. No se admiten interfaces web convencionales si se requiere enfoque 'Mobile-First'.
+
+**Convención de Secuencias de Comandos (Scripts):**
+Si esta skill, o cualquier automatización derivada de ella, requiere secuencias de comandos (ej. bash scripts para scaffolding), estas **deben** colocarse obligatoriamente en el subdirectorio estructural `scripts/` (ej: `.agents/skills/scripts/`). Además, debes hacer referencia a ellas en este archivo markdown usando **rutas de acceso relativas**.
+</identity>
 
 ---
 
@@ -47,11 +50,13 @@ testing completo y optimización de performance.
 
 ## 1. Principios Core
 
-### Mobile-First Approach
-- **Diseña primero para 320px+**, luego escala hacia arriba con breakpoints
-- **Progressive Enhancement**: funcionalidad base en todos los dispositivos
-- **Touch-Friendly**: mínimo 44×44px en tap targets
-- **Performance**: optimizar para redes lentas y dispositivos de gama baja first
+### Mobile-First Approach & Native Feel
+- **Diseña para sentirse Nativo**: Debes implementar `100dvh`, usar `BottomTabBar` (navegación inferior translúcida con blur) y `TopNav` fijo.
+- **Micro-interacciones y Animaciones**: Usa efectos como presionar y hundir (`active:scale-95`), "slide up" al abrir modales (`BottomSheet` resbaladizos con borderRadius de 32px), y transiciones muy fluidas.
+- **Scroll Contenido**: Prohíbe el scroll general del viewport. Solo el `<main>` dentro del layout debe scrollear usando `overflow-y-auto`.
+- **Modales Deslizables (Bottom Sheets)**: No uses alertas web tradicionales ni dialogos centrados web-like para interacciones primarias. Utiliza Action Sheets o modales que se deslizan desde abajo (`backdrop-blur-sm`).
+- **Touch-Friendly**: Tap targets gigantes (mín. 44px o 48px), grandes inputs limpios sin bordes afilados (`rounded-3xl` o `2xl`).
+- **Diseño Premium**: Evita colores primarios aburridos (usa degradados, fondos `#0a0e1a` o `zinc-950/900`, íconos llamativos emoji o lucide, e interfaces estilo "Wallet").
 
 ### Estándares de Calidad del Código
 - **Type Safety**: 100% TypeScript, sin tipos `any`
