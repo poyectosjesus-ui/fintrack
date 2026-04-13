@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  fintrack:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fintrack-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      # - DATABASE_URL=postgres://tu_base_remota... (Sobreescritura permitida)
+    # Si requieres que se comunique con host network local:
+    # network_mode: "host" 
