@@ -1,86 +1,107 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getWeeklyPeriods, getBiweeklyPeriods } from "@/lib/periods";
+// src/app/api/analytics/route.ts
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { withHandler } from '../_lib/handler';
+import { ok } from '../_lib/responses';
+import { requireWorkspace } from '../_lib/authorization';
 
-// GET /api/analytics?periodType=semanal|quincenal&count=4
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const periodType = searchParams.get("periodType") || "semanal";
-    const count = parseInt(searchParams.get("count") || "4");
+const AnalyticsSchema = z.object({
+  from:  z.coerce.date().optional(),
+  to:    z.coerce.date().optional(),
+  type:  z.enum(['INCOME', 'EXPENSE']).optional(),
+});
 
-    const periods =
-      periodType === "quincenal"
-        ? getBiweeklyPeriods(count)
-        : getWeeklyPeriods(count);
+// GET /api/analytics — Resumen financiero del workspace
+export const GET = withHandler(async (req: NextRequest) => {
+  const session = await auth();
+  const ws = requireWorkspace(session);
 
-    const analyticsData = await Promise.all(
-      periods.map(async (period) => {
-        const transactions = await prisma.transaction.findMany({
-          where: {
-            date: { gte: period.start, lte: period.end },
-          },
-          include: { category: true },
-        });
+  const q = AnalyticsSchema.parse(Object.fromEntries(req.nextUrl.searchParams));
 
-        const ingresos = transactions
-          .filter((t) => t.type === "INGRESO")
-          .reduce((sum, t) => sum + Number(t.amount), 0);
+  // Por defecto: mes actual
+  const now = new Date();
+  const from = q.from ?? new Date(now.getFullYear(), now.getMonth(), 1);
+  const to   = q.to   ?? new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-        const gastos = transactions
-          .filter((t) => t.type === "GASTO")
-          .reduce((sum, t) => sum + Number(t.amount), 0);
+  const baseWhere = {
+    workspaceId: ws.user.workspaceId,
+    status:      'CONFIRMED' as const,
+    date:        { gte: from, lte: to },
+  };
 
-        // By category
-        const byCategory = transactions.reduce(
-          (acc, t) => {
-            const key = t.category.name;
-            if (!acc[key]) {
-              acc[key] = {
-                name: key,
-                type: t.type,
-                color: t.category.color,
-                total: 0,
-                count: 0,
-              };
-            }
-            acc[key].total += Number(t.amount);
-            acc[key].count += 1;
-            return acc;
-          },
-          {} as Record<string, { name: string; type: string; color: string; total: number; count: number }>
-        );
+  const [incomeAgg, expenseAgg, byCategory, byMember] = await Promise.all([
+    // Suma de ingresos
+    prisma.transaction.aggregate({
+      where: { ...baseWhere, type: 'INCOME' },
+      _sum: { amount: true },
+      _count: { id: true },
+    }),
+    // Suma de gastos
+    prisma.transaction.aggregate({
+      where: { ...baseWhere, type: 'EXPENSE' },
+      _sum: { amount: true },
+      _count: { id: true },
+    }),
+    // Gastos por categoría
+    prisma.transaction.groupBy({
+      by: ['categoryId'],
+      where: { ...baseWhere, type: 'EXPENSE' },
+      _sum: { amount: true },
+      _count: { id: true },
+      orderBy: { _sum: { amount: 'desc' } },
+      take: 10,
+    }),
+    // Gastos por miembro creador
+    prisma.transaction.groupBy({
+      by: ['createdById'],
+      where: { ...baseWhere, type: 'EXPENSE' },
+      _sum: { amount: true },
+      _count: { id: true },
+    }),
+  ]);
 
-        return {
-          period: period.label,
-          startDate: period.start.toISOString(),
-          endDate: period.end.toISOString(),
-          ingresos,
-          gastos,
-          balance: ingresos - gastos,
-          transactionCount: transactions.length,
-          byCategory: Object.values(byCategory),
-        };
-      })
-    );
+  // Enriquecer categorías con nombres
+  const categoryIds = byCategory.map(c => c.categoryId);
+  const categories  = await prisma.category.findMany({
+    where: { id: { in: categoryIds } },
+    select: { id: true, name: true, icon: true, color: true },
+  });
+  const catMap = new Map(categories.map(c => [c.id, c]));
 
-    // Summary stats
-    const totalIngresos = analyticsData.reduce((s, d) => s + d.ingresos, 0);
-    const totalGastos = analyticsData.reduce((s, d) => s + d.gastos, 0);
+  // Enriquecer miembros con nombres
+  const memberIds = byMember.map(m => m.createdById);
+  const members = await prisma.user.findMany({
+    where: { id: { in: memberIds } },
+    select: { id: true, name: true, avatarUrl: true },
+  });
+  const memberMap = new Map(members.map(m => [m.id, m]));
 
-    return NextResponse.json({
-      periodType,
-      data: analyticsData,
-      summary: {
-        totalIngresos,
-        totalGastos,
-        totalBalance: totalIngresos - totalGastos,
-        avgIngresos: totalIngresos / count,
-        avgGastos: totalGastos / count,
-      },
-    });
-  } catch (error) {
-    console.error("Analytics error:", error);
-    return NextResponse.json({ error: "Error al calcular analytics" }, { status: 500 });
-  }
-}
+  const totalIncome  = Number(incomeAgg._sum.amount  ?? 0);
+  const totalExpense = Number(expenseAgg._sum.amount ?? 0);
+  const balance      = totalIncome - totalExpense;
+  const savingsRate  = totalIncome > 0 ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100) : 0;
+
+  return ok({
+    period: { from, to },
+    summary: {
+      totalIncome,
+      totalExpense,
+      balance,
+      savingsRate,
+      transactionCount: incomeAgg._count.id + expenseAgg._count.id,
+    },
+    byCategory: byCategory.map(c => ({
+      category:    catMap.get(c.categoryId),
+      total:       Number(c._sum.amount ?? 0),
+      count:       c._count.id,
+      percentage:  totalExpense > 0 ? Math.round((Number(c._sum.amount) / totalExpense) * 100) : 0,
+    })),
+    byMember: byMember.map(m => ({
+      user:  memberMap.get(m.createdById),
+      total: Number(m._sum.amount ?? 0),
+      count: m._count.id,
+    })),
+  });
+});
