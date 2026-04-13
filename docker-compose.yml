@@ -13,6 +13,8 @@ services:
       - "5432:5432"
     volumes:
       - fintrack_postgres_data:/var/lib/postgresql/data
+    networks:
+      - fintrack_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U devuser -d finance_tracker"]
       interval: 5s
@@ -30,12 +32,19 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - fintrack_network
     env_file:
       - .env
     environment:
       - NODE_ENV=production
-      # La URL fuerza conexión al servicio "db" del orquestador, ignorando lo que dicte el .env si hace falta
+      # La URL fuerza conexión al servicio "db" del orquestador, a través de la red fintrack_network
       - DATABASE_URL=postgresql://devuser:devpass@db:5432/finance_tracker
+
+networks:
+  fintrack_network:
+    name: fintrack_bridge  # Nombre real de la red en Docker
+    driver: bridge
 
 volumes:
   fintrack_postgres_data:
