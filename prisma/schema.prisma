@@ -1,5 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// FinTrack Familia — Prisma Schema v2
+// 15 tablas: usuarios, workspaces, categorías jerárquicas,
+// transacciones unificadas, suscripciones SaaS, presupuestos,
+// metas de ahorro, métodos de pago modernos y notificaciones.
 
 generator client {
   provider = "prisma-client-js"
@@ -9,54 +11,597 @@ datasource db {
   provider = "postgresql"
 }
 
-enum TransactionType {
-  INGRESO
-  GASTO
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum WorkspacePlan {
+  FREE
+  PRO
 }
 
-enum PeriodType {
-  SEMANAL
-  QUINCENAL
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
 }
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum AttachmentType {
+  IMAGE
+  PDF
+  OTHER
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+}
+
+enum CategoryScope {
+  SYSTEM     // Predefinida por la plataforma
+  WORKSPACE  // Creada por el grupo
+  PERSONAL   // Solo visible para un miembro
+}
+
+enum PaymentMethodType {
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  TRANSFER
+  DIGITAL_WALLET
+  CRYPTO
+}
+
+enum PaymentProvider {
+  VISA
+  MASTERCARD
+  AMEX
+  PAYPAL
+  MERCADO_PAGO
+  CLIP
+  OXXO_PAY
+  STRIPE
+  BBVA
+  BANAMEX
+  SANTANDER
+  HSBC
+  BANREGIO
+  NU_BANK
+  OTHER
+}
+
+enum SubscriptionCategory {
+  STREAMING      // Netflix, Disney+, HBO Max, Crunchyroll
+  MUSIC          // Spotify, Apple Music, YouTube Music
+  PRODUCTIVITY   // Notion, Obsidian, Todoist
+  STORAGE        // Google One, iCloud, Dropbox
+  WORK_TOOL      // GitHub, Figma, Slack, Zoom, Linear
+  AI_TOOL        // ChatGPT Plus, Midjourney, Claude, Perplexity
+  GAMING         // Xbox, PS Plus, Steam, Nintendo
+  HEALTH         // Calm, Headspace, Nike Training
+  EDUCATION      // Coursera, Udemy, Platzi, Duolingo
+  NEWS           // NYT, The Athletic
+  SECURITY       // VPN, Password managers
+  OTHER
+}
+
+enum BillingCycle {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  IN_TRIAL
+  EXPIRED
+}
+
+enum SubPaymentStatus {
+  PAID
+  FAILED
+  PENDING
+  REFUNDED
+}
+
+enum BudgetPeriod {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  ANNUAL
+}
+
+enum SavingsGoalType {
+  EMERGENCY    // Fondo de emergencia
+  VACATION     // Vacaciones
+  HOME         // Casa / Renta
+  CAR          // Auto
+  EDUCATION    // Estudios
+  INVESTMENT   // Inversión
+  TECH         // Gadgets
+  WEDDING      // Boda
+  BABY         // Bebé
+  CUSTOM
+}
+
+enum GoalPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum NotificationType {
+  PAYMENT_DUE           // Pago próximo a vencer
+  SUBSCRIPTION_RENEWS   // Suscripción se renueva en 3 días
+  BUDGET_ALERT          // X% del presupuesto consumido
+  GOAL_REACHED          // Meta de ahorro alcanzada
+  INVITE                // Invitación a workspace
+  SPLIT_PENDING         // Te deben parte de un gasto
+  MEMBER_JOINED         // Nuevo miembro se unió
+  SYSTEM                // Mensajes del sistema
+}
+
+// ─────────────────────────────────────────────────────────────
+// 1. USUARIOS
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String
+  passwordHash    String?
+  avatarUrl       String?
+  locale          String   @default("es-MX")
+  timezone        String   @default("America/Mexico_City")
+  onboardingDone  Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  ownedWorkspaces      Workspace[]          @relation("WorkspaceOwner")
+  memberships          WorkspaceMember[]
+  sentInvitations      Invitation[]         @relation("InvitedBy")
+  transactions         Transaction[]        @relation("TransactionCreator")
+  paymentMethods       PaymentMethod[]
+  notifications        Notification[]
+  savingsContributions SavingsContribution[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 2. WORKSPACES (antes "familias")
+// ─────────────────────────────────────────────────────────────
+
+model Workspace {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  currency    String        @default("MXN")
+  plan        WorkspacePlan @default(FREE)
+  memberLimit Int           @default(5)
+  avatarUrl   String?
+  ownerId     String
+  owner       User          @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  members          WorkspaceMember[]
+  invitations      Invitation[]
+  categories       Category[]        @relation("WorkspaceCategories")
+  transactions     Transaction[]
+  subscriptions    Subscription[]
+  paymentMethods   PaymentMethod[]
+  budgets          Budget[]
+  savingsGoals     SavingsGoal[]
+  notifications    Notification[]
+
+  @@map("workspaces")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. MIEMBROS DEL WORKSPACE
+// ─────────────────────────────────────────────────────────────
+
+model WorkspaceMember {
+  id          String     @id @default(cuid())
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        MemberRole @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+
+  // Permisos granulares
+  canCreateExpense        Boolean @default(true)
+  canCreateIncome         Boolean @default(true)
+  canManageSubscriptions  Boolean @default(false)
+  canManageBudgets        Boolean @default(false)
+  canManageMembers        Boolean @default(false)
+
+  // Límite personal de gasto mensual (opcional)
+  monthlyLimit Decimal? @db.Decimal(12, 2)
+
+  // Relations
+  txSplits             TransactionSplit[]
+  savingsContributions SavingsContribution[]
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. INVITACIONES
+// ─────────────────────────────────────────────────────────────
+
+model Invitation {
+  id          String           @id @default(cuid())
+  workspaceId String
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email       String
+  code        String           @unique
+  role        MemberRole       @default(MEMBER)
+  status      InvitationStatus @default(PENDING)
+  invitedById String
+  invitedBy   User             @relation("InvitedBy", fields: [invitedById], references: [id])
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime         @default(now())
+
+  @@map("invitations")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5. CATEGORÍAS (árbol jerárquico auto-referencial)
+// ─────────────────────────────────────────────────────────────
 
 model Category {
-  id           Int           @id @default(autoincrement())
-  name         String        @unique
-  type         TransactionType
-  color        String        @default("#6366f1")
-  icon         String        @default("tag")
-  transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          String        @id @default(cuid())
+  name        String
+  type        CategoryType
+  scope       CategoryScope @default(SYSTEM)
+  icon        String        @default("📌")
+  color       String        @default("#6366f1")
+  sortOrder   Int           @default(0)
+  isActive    Boolean       @default(true)
+
+  // Jerarquía
+  parentId    String?
+  parent      Category?     @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[]    @relation("CategoryTree")
+
+  // Opcional: solo si scope = WORKSPACE
+  workspaceId String?
+  workspace   Workspace?    @relation("WorkspaceCategories", fields: [workspaceId], references: [id])
+
+  // Relations
+  transactions  Transaction[]
+  budgets       Budget[]
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("categories")
 }
 
-model Transaction {
-  id          Int             @id @default(autoincrement())
-  amount      Decimal         @db.Decimal(12, 2)
-  description String
-  type        TransactionType
-  date        DateTime        @default(now())
-  categoryId  Int
-  category    Category        @relation(fields: [categoryId], references: [id])
-  notes       String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+// ─────────────────────────────────────────────────────────────
+// 6. MÉTODOS DE PAGO
+// ─────────────────────────────────────────────────────────────
 
-  @@index([date])
-  @@index([type])
+model PaymentMethod {
+  id          String            @id @default(cuid())
+  workspaceId String
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id])
+  createdById String
+  createdBy   User              @relation(fields: [createdById], references: [id])
+  type        PaymentMethodType
+  provider    PaymentProvider   @default(OTHER)
+  alias       String
+  last4       String?
+  color       String?           @default("#6366f1")
+  isDefault   Boolean           @default(false)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  transactions  Transaction[]
+  subscriptions Subscription[]
+
+  @@map("payment_methods")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 7. TRANSACCIONES (modelo unificado ingresos + gastos)
+// ─────────────────────────────────────────────────────────────
+
+model Transaction {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id])
+  createdById     String
+  createdBy       User              @relation("TransactionCreator", fields: [createdById], references: [id])
+
+  // Datos principales
+  type            TransactionType
+  amount          Decimal           @db.Decimal(12, 2)
+  description     String
+  date            DateTime          @default(now())
+  status          TransactionStatus @default(CONFIRMED)
+
+  // Clasificación
+  categoryId      String
+  category        Category          @relation(fields: [categoryId], references: [id])
+
+  // Método de pago
+  paymentMethodId String?
+  paymentMethod   PaymentMethod?    @relation(fields: [paymentMethodId], references: [id])
+
+  // Multi-moneda
+  currency        String            @default("MXN")
+  exchangeRate    Decimal?          @db.Decimal(10, 6)
+  amountInBase    Decimal?          @db.Decimal(12, 2) // Monto convertido a moneda base del workspace
+
+  // Recurrencia
+  isRecurring     Boolean           @default(false)
+  recurringRule   String?           // RRULE string (iCal standard)
+  parentId        String?           // Si es copia generada de un recurrente
+  parent          Transaction?      @relation("RecurringChildren", fields: [parentId], references: [id])
+  children        Transaction[]     @relation("RecurringChildren")
+
+  // Suscripción vinculada
+  subscriptionId  String?
+  subscription    Subscription?     @relation(fields: [subscriptionId], references: [id])
+
+  // Extras
+  tags            String[]
+  notes           String?
+  receiptUrl      String?
+  lat             Float?
+  lng             Float?
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  splits              TransactionSplit[]
+  attachments         TransactionAttachment[]
+  subscriptionPayment SubscriptionPayment?
+  savingsContributions SavingsContribution[]
+
+  @@index([workspaceId, date])
+  @@index([workspaceId, type])
   @@index([categoryId])
+  @@index([subscriptionId])
   @@map("transactions")
 }
 
-model Period {
-  id        Int        @id @default(autoincrement())
-  type      PeriodType
-  startDate DateTime
-  endDate   DateTime
-  label     String
-  createdAt DateTime   @default(now())
+// ─────────────────────────────────────────────────────────────
+// 8. SPLITS — División de gastos entre miembros
+// ─────────────────────────────────────────────────────────────
 
-  @@map("periods")
+model TransactionSplit {
+  id            String          @id @default(cuid())
+  transactionId String
+  transaction   Transaction     @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  memberId      String
+  member        WorkspaceMember @relation(fields: [memberId], references: [id])
+  amount        Decimal         @db.Decimal(12, 2)
+  isPaid        Boolean         @default(false)
+  paidAt        DateTime?
+  note          String?
+  createdAt     DateTime        @default(now())
+
+  @@map("transaction_splits")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 9. ADJUNTOS — Recibos y archivos
+// ─────────────────────────────────────────────────────────────
+
+model TransactionAttachment {
+  id            String         @id @default(cuid())
+  transactionId String
+  transaction   Transaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  url           String
+  type          AttachmentType @default(IMAGE)
+  filename      String
+  sizeBytes     Int?
+  createdAt     DateTime       @default(now())
+
+  @@map("transaction_attachments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 10. SUSCRIPCIONES (Netflix, SaaS, herramientas)
+// ─────────────────────────────────────────────────────────────
+
+model Subscription {
+  id              String               @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace            @relation(fields: [workspaceId], references: [id])
+  categoryId      String
+  category        Category             @relation(fields: [categoryId], references: [id])
+  paymentMethodId String?
+  paymentMethod   PaymentMethod?       @relation(fields: [paymentMethodId], references: [id])
+
+  // Info del servicio
+  name            String
+  provider        String?
+  logoUrl         String?
+  websiteUrl      String?
+  subCategory     SubscriptionCategory @default(OTHER)
+
+  // Facturación
+  billingCycle    BillingCycle         @default(MONTHLY)
+  amount          Decimal              @db.Decimal(12, 2)
+  currency        String               @default("MXN")
+
+  // Fechas
+  startDate       DateTime             @default(now())
+  nextBillingDate DateTime
+  trialEndDate    DateTime?
+  cancelledAt     DateTime?
+
+  // Estado
+  status          SubscriptionStatus   @default(ACTIVE)
+  sharedWithAll   Boolean              @default(true) // ¿Todos en el workspace la usan?
+
+  notes           String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  // Relations
+  transactions Transaction[]
+  payments     SubscriptionPayment[]
+
+  @@map("subscriptions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 11. HISTORIAL DE PAGOS DE SUSCRIPCIÓN
+// ─────────────────────────────────────────────────────────────
+
+model SubscriptionPayment {
+  id             String           @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription     @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  transactionId  String           @unique
+  transaction    Transaction      @relation(fields: [transactionId], references: [id])
+  billingDate    DateTime
+  amount         Decimal          @db.Decimal(12, 2)
+  currency       String           @default("MXN")
+  status         SubPaymentStatus @default(PAID)
+  failureReason  String?
+  createdAt      DateTime         @default(now())
+
+  @@map("subscription_payments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 12. PRESUPUESTOS POR CATEGORÍA
+// ─────────────────────────────────────────────────────────────
+
+model Budget {
+  id          String       @id @default(cuid())
+  workspaceId String
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id])
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id])
+
+  // Si es personal (memberId) o grupal (memberId null)
+  memberId    String?
+
+  amount      Decimal      @db.Decimal(12, 2)
+  period      BudgetPeriod @default(MONTHLY)
+  startDate   DateTime     @default(now())
+
+  // Alertas
+  alertAt     Int          @default(80)  // Alerta al 80% consumido
+  rollover    Boolean      @default(false)
+
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([workspaceId, categoryId, period])
+  @@map("budgets")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 13. METAS DE AHORRO
+// ─────────────────────────────────────────────────────────────
+
+model SavingsGoal {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id])
+  name          String
+  type          SavingsGoalType @default(CUSTOM)
+  icon          String          @default("🎯")
+  description   String?
+  targetAmount  Decimal         @db.Decimal(12, 2)
+  currentAmount Decimal         @default(0) @db.Decimal(12, 2)
+  dueDate       DateTime?
+  priority      GoalPriority    @default(MEDIUM)
+  isShared      Boolean         @default(true)
+  isCompleted   Boolean         @default(false)
+  completedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  contributions SavingsContribution[]
+
+  @@map("savings_goals")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 14. APORTACIONES A METAS
+// ─────────────────────────────────────────────────────────────
+
+model SavingsContribution {
+  id            String          @id @default(cuid())
+  goalId        String
+  goal          SavingsGoal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  memberId      String
+  member        WorkspaceMember @relation(fields: [memberId], references: [id])
+  userId        String
+  user          User            @relation(fields: [userId], references: [id])
+  amount        Decimal         @db.Decimal(12, 2)
+  transactionId String?
+  transaction   Transaction?    @relation(fields: [transactionId], references: [id])
+  note          String?
+  date          DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+
+  @@map("savings_contributions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 15. NOTIFICACIONES
+// ─────────────────────────────────────────────────────────────
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String?
+  workspace   Workspace?       @relation(fields: [workspaceId], references: [id])
+  type        NotificationType
+  title       String
+  message     String
+  read        Boolean          @default(false)
+  actionUrl   String?
+  relatedId   String?          // UUID de la entidad relacionada
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, read])
+  @@map("notifications")
 }
