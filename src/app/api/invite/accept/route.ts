@@ -23,9 +23,9 @@ export const POST = withHandler(async (req: NextRequest) => {
     where: { code }
   });
 
-  if (!invitation) throw new AppError('Link de invitación inválido o no existe.', 404);
-  if (invitation.status !== 'PENDING') throw new AppError(`Esta invitación se encuentra en estado: ${invitation.status}`, 400);
-  if (new Date() > invitation.expiresAt) throw new AppError('Esta invitación ha expirado.', 400);
+  if (!invitation) throw AppError.notFound('Link de invitación');
+  if (invitation.status !== 'PENDING') throw AppError.badRequest(`Esta invitación se encuentra en estado: ${invitation.status}`);
+  if (new Date() > invitation.expiresAt) throw AppError.badRequest('Esta invitación ha expirado.');
 
   // Asegurar que el usuario no esté ya en el Workspace
   const existingMember = await prisma.workspaceMember.findUnique({
@@ -37,7 +37,7 @@ export const POST = withHandler(async (req: NextRequest) => {
     }
   });
 
-  if (existingMember) throw new AppError('Ya eres miembro de este espacio de trabajo.', 400);
+  if (existingMember) throw AppError.badRequest('Ya eres miembro de este espacio de trabajo.');
 
   // Todo correcto: Crear membresía y Marcar invitación como ACCEPTED
   await prisma.$transaction([

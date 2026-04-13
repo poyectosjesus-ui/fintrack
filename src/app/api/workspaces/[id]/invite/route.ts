@@ -133,7 +133,7 @@ export const DELETE = withHandler(async (req: NextRequest, ctx: Ctx) => {
   await requirePermission(session, 'canManageMembers');
 
   const inviteId = req.nextUrl.searchParams.get('inviteId');
-  if (!inviteId) throw new AppError('inviteId is required', 400);
+  if (!inviteId) throw AppError.badRequest('inviteId is required');
 
   // We do not physically delete, we revoke it for security audits
   await prisma.invitation.update({
