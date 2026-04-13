@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TransactionType {
+  INGRESO
+  GASTO
+}
+
+enum PeriodType {
+  SEMANAL
+  QUINCENAL
+}
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  type         TransactionType
+  color        String        @default("#6366f1")
+  icon         String        @default("tag")
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("categories")
+}
+
+model Transaction {
+  id          Int             @id @default(autoincrement())
+  amount      Decimal         @db.Decimal(12, 2)
+  description String
+  type        TransactionType
+  date        DateTime        @default(now())
+  categoryId  Int
+  category    Category        @relation(fields: [categoryId], references: [id])
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([date])
+  @@index([type])
+  @@index([categoryId])
+  @@map("transactions")
+}
+
+model Period {
+  id        Int        @id @default(autoincrement())
+  type      PeriodType
+  startDate DateTime
+  endDate   DateTime
+  label     String
+  createdAt DateTime   @default(now())
+
+  @@map("periods")
+}
