@@ -1,14 +1,14 @@
 # Capa 1: Dependencias
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 # Necesario para ciertas dependencias binarias en alpine (Prisma requiere openssl y libc6)
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install
 
 # Capa 2: Constructor
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -23,7 +23,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # Capa 3: Producción / Máquina Ejecutora
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
