@@ -3,9 +3,9 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { withHandler } from '../../api/_lib/handler';
-import { ok, unauthorized } from '../../api/_lib/responses';
-import { AppError } from '../../api/_lib/errors';
+import { withHandler } from '../../_lib/handler';
+import { ok, unauthorized } from '../../_lib/responses';
+import { AppError } from '../../_lib/errors';
 
 const AcceptSchema = z.object({
   code: z.string().trim()
