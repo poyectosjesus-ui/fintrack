@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ArrowRightLeft, Target, Repeat, PieChart } from 'lucide-react';
+import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, Target, Repeat, PieChart } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/transactions', label: 'Historial', icon: ArrowRightLeft },
+  { href: '/transactions/incomes', label: 'Ingresos', icon: ArrowDownCircle },
+  { href: '/transactions/expenses', label: 'Egresos', icon: ArrowUpCircle },
   { href: '/budgets', label: 'Presupuestos', icon: PieChart },
   { href: '/savings', label: 'Ahorros', icon: Target },
   { href: '/subscriptions', label: 'Suscripciones', icon: Repeat },

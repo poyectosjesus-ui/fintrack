@@ -15,7 +15,7 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-6 md:pt-8 w-full max-w-screen-xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 pt-6 md:pt-8 w-full max-w-screen-2xl mx-auto">
         <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Ajustes</h1>
       </div>
 
@@ -58,13 +58,13 @@ export default async function ProfilePage() {
                    </div>
                    <ChevronRight size={20} className="text-zinc-600" />
                  </button>
-                 <button className="w-full flex items-center justify-between p-5 hover:bg-zinc-900 transition-colors group">
+                 <Link href="/profile/team" className="w-full flex items-center justify-between p-5 hover:bg-zinc-900 transition-colors group">
                    <div className="flex items-center gap-4">
                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform"><Users size={20} /></div>
-                     <span className="font-semibold text-zinc-100">Miembros de la Familia</span>
+                     <span className="font-semibold text-zinc-100">Redes y Miembros (Team)</span>
                    </div>
                    <ChevronRight size={20} className="text-zinc-600" />
-                 </button>
+                 </Link>
               </div>
 
               <div className="bg-zinc-950 rounded-3xl overflow-hidden border border-zinc-800/80 divide-y divide-zinc-800/50 shadow-xl">

@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, LayoutDashboard, ArrowRightLeft, Target, Repeat, PieChart } from 'lucide-react';
+import { Menu, X, LayoutDashboard, ArrowDownCircle, ArrowUpCircle, Target, Repeat, PieChart } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/transactions', label: 'Historial', icon: ArrowRightLeft },
+  { href: '/transactions/incomes', label: 'Ingresos', icon: ArrowDownCircle },
+  { href: '/transactions/expenses', label: 'Egresos', icon: ArrowUpCircle },
   { href: '/budgets', label: 'Presupuestos', icon: PieChart },
   { href: '/savings', label: 'Ahorros', icon: Target },
   { href: '/subscriptions', label: 'Suscripciones', icon: Repeat },

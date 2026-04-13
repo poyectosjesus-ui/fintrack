@@ -95,10 +95,7 @@ export const POST = withHandler(async (req: NextRequest) => {
 
   const body = CreateBudgetSchema.parse(await req.json());
 
-  const member = await prisma.workspaceMember.findUnique({
-    where: { workspaceId_userId: { workspaceId: ws.user.workspaceId, userId: session!.user.id } },
-  });
-  if (!member || !member.canManageBudgets) throw AppError.forbidden('No tienes permiso para gestionar presupuestos');
+  // Permiso ya ha sido validado correctamente arriba por requirePermission
 
   const category = await prisma.category.findFirst({
     where: { id: body.categoryId, isActive: true, OR: [{ scope: 'SYSTEM' }, { workspaceId: ws.user.workspaceId }] },

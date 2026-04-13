@@ -10,7 +10,7 @@ import { requireWorkspace } from '../_lib/authorization';
 const CreateGoalSchema = z.object({
   name:         z.string().min(1).max(100).trim(),
   type:         z.enum(['EMERGENCY','VACATION','HOME','CAR','EDUCATION','INVESTMENT','TECH','WEDDING','BABY','CUSTOM']).default('CUSTOM'),
-  icon:         z.string().emoji().default('🎯'),
+  icon:         z.string().default('Target'),
   description:  z.string().max(500).trim().optional(),
   targetAmount: z.number().positive(),
   dueDate:      z.coerce.date().min(new Date(), 'La fecha debe ser futura').optional(),

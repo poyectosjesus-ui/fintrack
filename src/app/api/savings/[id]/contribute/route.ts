@@ -11,7 +11,7 @@ import { AppError } from '../../../_lib/errors';
 type Ctx = { params: Promise<{ id: string }> };
 
 const ContributeSchema = z.object({
-  amount: z.number().positive('El monto debe ser positivo'),
+  amount: z.number().refine(val => val !== 0, 'El monto no puede ser cero'),
   note:   z.string().max(200).optional(),
   date:   z.coerce.date().optional(),
 }).strict();
@@ -37,11 +37,11 @@ export const POST = withHandler(async (req: NextRequest, ctx: Ctx) => {
   if (!member) throw AppError.forbidden('No eres miembro del workspace');
 
   // Transacción: crear aportación + actualizar currentAmount del goal
-  const newAmount = Math.min(
+  const newAmount = Math.max(0, Math.min(
     Number(goal.currentAmount) + body.amount,
-    Number(goal.targetAmount),
-  );
-  const isNowCompleted = newAmount >= Number(goal.targetAmount);
+    Number(goal.targetAmount)
+  ));
+  const isNowCompleted = newAmount >= Number(goal.targetAmount) && newAmount > 0;
 
   const [contribution] = await prisma.$transaction([
     prisma.savingsContribution.create({

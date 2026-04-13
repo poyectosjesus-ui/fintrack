@@ -38,8 +38,11 @@ async function getMembership(session: Session) {
  */
 export async function requirePermission(session: Session, permission: Permission) {
   const member = await getMembership(session);
+  // El OWNER es un administrador absoluto y puede hacer cualquier cosa
+  if (member.role === 'OWNER') return member;
+  
   if (!member[permission]) {
-    throw AppError.forbidden(`No tienes permiso para realizar esta acción`);
+    throw AppError.forbidden(`No tienes permiso para realizar esta acción: ${permission}`);
   }
   return member;
 }
